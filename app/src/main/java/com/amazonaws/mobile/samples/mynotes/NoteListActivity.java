@@ -37,6 +37,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.amazonaws.mobile.client.AWSMobileClient;
+
+//Analytics
+import com.amazonaws.mobileconnectors.pinpoint.PinpointManager;
+import com.amazonaws.mobileconnectors.pinpoint.PinpointConfiguration;
+
 import com.amazonaws.mobile.samples.mynotes.data.Note;
 import com.amazonaws.mobile.samples.mynotes.data.NoteViewHolder;
 import com.amazonaws.mobile.samples.mynotes.data.NotesContentContract;
@@ -53,6 +59,7 @@ public class NoteListActivity
         extends AppCompatActivity
         implements LoaderManager.LoaderCallbacks<Cursor>
 {
+    public static PinpointManager pinpointManager;
     /**
      * The unique identifier for the loader
      */
@@ -82,6 +89,25 @@ public class NoteListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_note_list);
+
+        //Amazon Singleton
+        AWSMobileClient.getInstance().initialize(this).execute();
+
+        //Analytics with pinpoint
+        PinpointConfiguration pinpointConfig = new PinpointConfiguration(
+                getApplicationContext(),
+                AWSMobileClient.getInstance().getCredentialsProvider(),
+                AWSMobileClient.getInstance().getConfiguration());
+
+        pinpointManager = new PinpointManager(pinpointConfig);
+
+        // Start a session with Pinpoint
+        pinpointManager.getSessionClient().startSession();
+
+        // Stop the session and submit the default app started event
+        pinpointManager.getSessionClient().stopSession();
+        pinpointManager.getAnalyticsClient().submitEvents();
+
 
         // Install the application crash handler.  This is only done on the first activity.
         ApplicationCrashHandler.installHandler();
