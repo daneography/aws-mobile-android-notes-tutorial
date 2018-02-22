@@ -24,8 +24,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
+import com.amazonaws.mobile.samples.AWSProvider;
 import com.amazonaws.mobile.samples.mynotes.data.Note;
 import com.amazonaws.mobile.samples.mynotes.data.NotesContentContract;
+import com.amazonaws.mobileconnectors.pinpoint.analytics.AnalyticsClient;
+import com.amazonaws.mobileconnectors.pinpoint.analytics.AnalyticsEvent;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -152,7 +155,15 @@ public class NoteDetailFragment extends Fragment {
             } else {
                 itemUri = contentResolver.insert(NotesContentContract.Notes.CONTENT_URI, values);
                 isUpdate = true;    // Anything from now on is an update
-                itemUri = NotesContentContract.Notes.uriBuilder(mItem.getNoteId());
+
+                // Send Custom Event to Amazon Pinpoint
+                final AnalyticsClient mgr = AWSProvider.getInstance()
+                        .getPinpointManager()
+                        .getAnalyticsClient();
+                final AnalyticsEvent evt = mgr.createEvent("AddNote")
+                        .withAttribute("noteId", mItem.getNoteId());
+                mgr.recordEvent(evt);
+                mgr.submitEvents();
             }
         }
     }
